@@ -20,6 +20,8 @@ public class BlockBreak implements Listener{
 		breakableMaterials.add(Material.GRASS);
 		breakableMaterials.add(Material.DIRT);
 		breakableMaterials.add(Material.LEAVES);
+		breakableMaterials.add(Material.GLASS);
+		breakableMaterials.add(Material.THIN_GLASS);
 		
 		Core.registerListener(this);
 	}

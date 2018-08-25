@@ -7,17 +7,20 @@ import org.bukkit.ChatColor;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.Statistic;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
 import MSG.GameMechanics.ChestLootGenerator;
+import MSG.GameMechanics.Countdown;
 import MSG.Main.Core;
 import MSG.Main.GameStates.GameState;
 
@@ -29,9 +32,10 @@ public class GameManager {
 	public GameStarter gameStarter;
 	
 	public boolean isTeamGame;
+	public int numLootChests = 200;
+	public boolean generateChests = true;
 	public int playersRemaining;
 	public int gameTime;
-	public int numLootChests = 300;
 	
 	public ChestLootGenerator chestLootGenerator;
 	
@@ -89,18 +93,35 @@ public class GameManager {
 		scoreboardManager.updateScoreboard(); // update the scoreboard with the default values
 		
 		// generate loot chests
-		Location chestLocation;
-		for (int i = 0; i < numLootChests; i++){
-			while (true){
-				chestLocation = getSpawnLocation();
-				if (chestLocation.getBlock().getRelative(BlockFace.DOWN).getType() == Material.STATIONARY_WATER){
-					continue; // this location is not suitable for a chest (it's over water). try for another one
+		if (generateChests == true){
+			Material aboveMaterial, belowMaterial;
+			Location chestLocation;
+			for (int i = 0; i < numLootChests; i++){
+				while (true){
+					chestLocation = getSpawnLocation();
+					aboveMaterial = chestLocation.getBlock().getType();
+					belowMaterial = chestLocation.getBlock().getRelative(BlockFace.DOWN).getType();
+					if (aboveMaterial == Material.STATIONARY_WATER
+							|| aboveMaterial == Material.WATER
+							|| aboveMaterial == Material.STATIONARY_LAVA
+							|| aboveMaterial == Material.LAVA
+							|| belowMaterial == Material.STATIONARY_WATER
+							|| belowMaterial == Material.WATER
+							|| belowMaterial == Material.STATIONARY_LAVA
+							|| belowMaterial == Material.LAVA){
+						continue; // this location is not suitable for a chest (it's over water or lava). try for another one
+					}
+					chestLocation.getBlock().setType(Material.CHEST);
+					chestLocation.getBlock().setData( (byte)(r.nextInt(4)+1) ); // random direction (2, 3, 4, or 5)
+					break; // we found a suitable location and placed a chest there
 				}
-				chestLocation.getBlock().setType(Material.CHEST);
-				chestLocation.getBlock().setData( (byte)(r.nextInt(4)+1) ); // random direction (2, 3, 4, or 5)
-				break; // we found a suitable location and placed a chest there
 			}
 		}
+		
+		// setup world border
+		Core.gameWorld.getWorldBorder().setCenter(Core.gameCenter);
+		Core.gameWorld.getWorldBorder().setSize(600); // set world border size to 600 by 600 (radius 300)
+		Core.gameWorld.getWorldBorder().setSize(50, 550); // set the world border to shrink to 50 by 50 (radius 25) over the course of 550 seconds (9.16 mins)
 		
 		// generate the player teams
 		if (isTeamGame == true){
@@ -108,6 +129,11 @@ public class GameManager {
 		}
 		
 		// finish up the player and teleport into game
+		ItemStack compassItem = new ItemStack(Material.COMPASS, 1);
+		ItemMeta meta = compassItem.getItemMeta();
+		meta.setDisplayName(ChatColor.GOLD + "Compass to Mid");
+		compassItem.setItemMeta(meta);
+		
 		for (Player player : Bukkit.getOnlinePlayers()){
 			if (player.isOnline()){
 				player.setScoreboard(scoreboardManager.scoreboard);
@@ -118,9 +144,15 @@ public class GameManager {
 				//regen 5 for 1 second -- makes the scoreboard health value for the players automatically update
 				player.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, 20, 4));
 				
+				// blindness and negative jump potion for 5 seconds
+				player.addPotionEffect(new PotionEffect(PotionEffectType.SLOW, 120, 9)); // slowness 10 (6 seconds)
+				player.addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, 120, 0)); // blindness 1 (6 seconds)
+				player.addPotionEffect(new PotionEffect(PotionEffectType.JUMP, 120, -10)); // jump boost -9 (6 seconds)
+				
 				player.setFoodLevel(20); // set food level to full
-				player.setSaturation(40); // set saturation to 40
+				player.setSaturation(20); // set saturation to 20
 				clearInventory(player);
+				player.getInventory().setItem(8, compassItem);
 			}
 		}
 		
@@ -147,9 +179,30 @@ public class GameManager {
 		}
 		else{
 			// teleport players to random spawn locations
+			Location spawnLocation;
+			Material aboveMaterial, belowMaterial;
 			for (Player player : Bukkit.getOnlinePlayers()){
 				if (player.isOnline()){
-					player.teleport(getSpawnLocation().add(0.5, 0.0, 0.5));
+					while (true){
+						spawnLocation = getSpawnLocation();
+						
+						aboveMaterial = spawnLocation.getBlock().getType();
+						belowMaterial = spawnLocation.getBlock().getRelative(BlockFace.DOWN).getType();
+						if (aboveMaterial == Material.STATIONARY_WATER
+								|| aboveMaterial == Material.WATER
+								|| aboveMaterial == Material.STATIONARY_LAVA
+								|| aboveMaterial == Material.LAVA
+								|| belowMaterial == Material.STATIONARY_WATER
+								|| belowMaterial == Material.WATER
+								|| belowMaterial == Material.STATIONARY_LAVA
+								|| belowMaterial == Material.LAVA){
+							continue; // this location is not suitable for a spawn location; try for another one
+						}
+						
+						// found a suitable location that isn't above water, teleport the player there
+						player.teleport(spawnLocation.add(0.5, 0.0, 0.5));
+						break;
+					}
 				}
 			}
 		}
@@ -162,8 +215,12 @@ public class GameManager {
 		else{
 			Bukkit.getServer().broadcastMessage(ChatColor.LIGHT_PURPLE + "All chat is global for this Free For All game!");
 		}
+		Bukkit.getServer().broadcastMessage(ChatColor.GOLD + "" + ChatColor.BOLD + "Special thanks to 5kylord for recreating the MSG maps!");
 		
 		// start scheduled events
+		// countdown timer
+		@SuppressWarnings("unused")
+		Countdown countdown = new Countdown();
 		// scoreboard updater
 		scoreboardManager.start();
 		// set some final values
@@ -174,8 +231,49 @@ public class GameManager {
 	}
 	
 	@SuppressWarnings("deprecation")
+	public void endGameInitiate(int winningTeam){
+		// initiates the game end sequence for a team blood bath game
+		int seconds = 10;
+		
+		// end all scheduled events
+		scoreboardManager.stop();
+		Bukkit.getScheduler().cancelTasks(Core.thisPlugin);
+		Core.gameState = GameState.Ending;
+		
+		String winningMessage = "";
+		
+		if (winningTeam == 1){
+			winningMessage = ChatColor.BOLD + "" + Core.team1Color + Core.team1Name + " won the game!";
+		}
+		if (winningTeam == 2){
+			winningMessage = ChatColor.BOLD + "" + Core.team2Color + Core.team2Name + " won the game!";
+		}
+		if (winningTeam == 3){
+			winningMessage = ChatColor.BOLD + "" + Core.team3Color + Core.team3Name + " won the game!";
+		}
+		if (winningTeam == 4){
+			winningMessage = ChatColor.BOLD + "" + Core.team4Color + Core.team4Name + " won the game!";
+		}
+		
+		Bukkit.getServer().broadcastMessage(ChatColor.GOLD + "-----------------------------------");
+		Bukkit.getServer().broadcastMessage(winningMessage);
+		Bukkit.getServer().broadcastMessage(ChatColor.GOLD + "-----------------------------------");
+		
+		for (Player player : Bukkit.getOnlinePlayers()){
+			player.sendTitle("", winningMessage);
+		}
+		
+		Bukkit.getScheduler().scheduleSyncDelayedTask(Core.thisPlugin, new Runnable(){
+			@Override
+			public void run() {
+				Core.gameManager.endGame();
+			}
+		}, seconds*20L); // 10 second delay
+	}
+	
+	@SuppressWarnings("deprecation")
 	public void endGameInitiate(Player winningPlayer){
-		// initiates the game end sequence
+		// initiates the game end sequence for a free for all game
 		int seconds = 10;
 		if (winningPlayer == null){
 			seconds = 2; // no player won, game terminated
@@ -188,17 +286,12 @@ public class GameManager {
 		
 		String winningMessage = "";
 		
-		if (isTeamGame == true){
-			// TODO get the winning team and their name
+		if (winningPlayer == null){
+			winningMessage = ChatColor.DARK_RED + "" + ChatColor.BOLD + "The game was terminated!";
 		}
 		else{
-			if (winningPlayer == null){
-				winningMessage = ChatColor.DARK_RED + "" + ChatColor.BOLD + "The game was terminated!";
-			}
-			else{
-				String winningPlayerName = winningPlayer.getName();
-				winningMessage = ChatColor.BOLD + winningPlayerName + " won the game!";
-			}
+			String winningPlayerName = winningPlayer.getName();
+			winningMessage = ChatColor.BOLD + winningPlayerName + " won the game!";
 		}
 		
 		Bukkit.getServer().broadcastMessage(ChatColor.GOLD + "-----------------------------------");
@@ -306,10 +399,16 @@ public class GameManager {
 			else if (teamToBe == 2){
 				scoreboardManager.addPlayerToTeam(lowestPlayer.getName(), 2);
 			}
+			else if (teamToBe == 3){
+				scoreboardManager.addPlayerToTeam(lowestPlayer.getName(), 3);
+			}
+			else if (teamToBe == 4){
+				scoreboardManager.addPlayerToTeam(lowestPlayer.getName(), 4);
+			}
 			
 			// update teamToBe for next player
 			teamToBe++;
-			if (teamToBe > 2){
+			if (teamToBe > 4){
 				teamToBe = 1;
 			}
 		}
@@ -383,7 +482,8 @@ public class GameManager {
 		for (Player player : Bukkit.getOnlinePlayers()){
 			if (player != null
 					&& player.isOnline()
-					&& player.getGameMode() == GameMode.SURVIVAL){
+					&& player.getGameMode() == GameMode.SURVIVAL
+					&& player.isDead() == false){
 				numAlive++;
 			}
 		}
@@ -394,17 +494,80 @@ public class GameManager {
 		for (Player player : Bukkit.getOnlinePlayers()){
 			if (player != null
 					&& player.isOnline()
+					&& player.isDead() == false
 					&& player.getGameMode() == GameMode.SURVIVAL){
 				return player;
 			}
 		}
+		
+		// no players alive, so lets check all the dead players and see which one died the last
+		Player lastDiedPlayer = null;
+		int lastDiedTime = 1000000000; // some arbitrary large amount
+		
+		for (Player player : Bukkit.getOnlinePlayers()){
+			if (lastDiedPlayer == null){
+				lastDiedPlayer = player;
+				lastDiedTime = player.getStatistic(Statistic.TIME_SINCE_DEATH);
+				continue;
+			}
+			else if (player.getStatistic(Statistic.TIME_SINCE_DEATH) < lastDiedTime){
+				// this player has a new lowest time
+				lastDiedPlayer = player;
+				lastDiedTime = player.getStatistic(Statistic.TIME_SINCE_DEATH);
+			}
+		}
+		
+		if (lastDiedPlayer != null){
+			return lastDiedPlayer;
+		}
+		
 		return null;
+	}
+	
+	public int getLastTeamAlive(){
+		// returns integer 1 - 4 for the winning team (1 = red, 2 = green, 3 = blue, 4 = yellow)
+		// or -1 for no last team alive (maybe more than one is still alive)
+		
+		if (isOneTeamRemaining() == false){
+			return -1; // more than one team is still alive
+		}
+		
+		for (Player player : Bukkit.getOnlinePlayers()){
+			if (player.isOnline() == false
+					|| player.isDead() == true
+					|| player.getGameMode() != GameMode.SURVIVAL){
+				continue; // skip this player
+			}
+			else{
+				return getPlayerTeam(player);
+			}
+		}
+		
+		return -1; // no winning team
+	}
+	
+	public boolean isOneTeamRemaining(){
+		int lastPlayerTeam = 0;
+		for (Player player : Bukkit.getOnlinePlayers()){
+			if (player.isOnline() == false
+					|| player.isDead() == true
+					|| player.getGameMode() != GameMode.SURVIVAL){
+				continue; // skip this player
+			}
+			else if (lastPlayerTeam == 0){
+				lastPlayerTeam = getPlayerTeam(player); // set the first player's team
+			}
+			else if (lastPlayerTeam != getPlayerTeam(player)){
+				return false; // this player and the previous player have different teams, thus more than one team is still alive
+			}
+		}
+		return true;
 	}
 	
 	public Location getSpawnLocation(){
 		// generates a random location within 275 blocks from the center of the world/map
-		int random1 = r.nextInt(550)-275; // -275 to 275
-		int random2 = r.nextInt(550)-275; // -275 to 275
+		int random1 = r.nextInt(450)-225; // -225 to 225 (275 old)
+		int random2 = r.nextInt(450)-275; // -225 to 225
 		Block highestBlock = Core.gameWorld.getHighestBlockAt(Core.gameCenter.getBlockX()+random1, Core.gameCenter.getBlockZ()+random2);
 		
 		//Bukkit.getServer().broadcastMessage("type: " + highestBlock.getType() + " x:" + highestBlock.getX() + " y:" + highestBlock.getY() + " z:" + highestBlock.getZ());
@@ -414,6 +577,15 @@ public class GameManager {
 	
 	public void generateChestLoot(Inventory chestInventory){
 		chestLootGenerator.generateChestLoot(chestInventory);
+	}
+	
+	public boolean isOpOnline(){
+		for (Player player : Bukkit.getOnlinePlayers()){
+			if (player.isOp()){
+				return true;
+			}
+		}
+		return false;
 	}
 	
 	public void clearInventory(Player player){

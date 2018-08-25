@@ -9,6 +9,7 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 
 import MSG.Main.Core;
+import MSG.Main.GameStates.GameState;
 
 /**
  * Represents a watcher class which watches a chest's inventory until it is empty
@@ -34,7 +35,10 @@ public class ChestLootWatcher implements Runnable{
 	@SuppressWarnings("deprecation")
 	@Override
 	public void run() {
-		if (chestInventory == null
+		if (Core.gameState != GameState.Running){
+			end();
+		}
+		else if (chestInventory == null
 				|| chestInventory.getContents() == null
 				|| doesChestContainItems(chestInventory) == false){
 			// this chest is now empty, remove the block and end watcher

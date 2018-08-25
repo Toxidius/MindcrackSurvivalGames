@@ -16,14 +16,12 @@ import org.bukkit.WorldType;
 
 public class WorldTools {
 	
-	private World tempWorld;
-	
 	public WorldTools(){
 	}
 	
 	public boolean loadWorld(String worldName){
-		tempWorld = Bukkit.getServer().createWorld( new WorldCreator(worldName));
-		if ( !(tempWorld == null) ){ // checks if the world actually exists
+		World tempWorld = Bukkit.getServer().createWorld( new WorldCreator(worldName));
+		if (tempWorld != null){ // checks if the world actually exists
 			Bukkit.getServer().getWorlds().add(tempWorld);
 			return true; // world loaded successfully
 		}
@@ -31,8 +29,8 @@ public class WorldTools {
 	}
 	
 	public boolean unloadWorld(String worldName){
-		tempWorld = Bukkit.getWorld(worldName);
-		if ( tempWorld != null ){ // checks if the world is acutally loaded
+		World tempWorld = Bukkit.getWorld(worldName);
+		if (tempWorld != null){ // checks if the world is acutally loaded
 			return Bukkit.unloadWorld(worldName, true);
 		}
 		return false;

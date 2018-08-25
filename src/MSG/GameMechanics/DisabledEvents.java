@@ -3,15 +3,19 @@ package MSG.GameMechanics;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.GameMode;
+import org.bukkit.Material;
+import org.bukkit.entity.Monster;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
+import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 import org.bukkit.event.entity.FoodLevelChangeEvent;
+import org.bukkit.event.entity.ItemSpawnEvent;
 import org.bukkit.event.player.PlayerAchievementAwardedEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerPortalEvent;
@@ -35,6 +39,13 @@ public class DisabledEvents implements Listener{
 			if (e.getCause() == DamageCause.VOID){
 				e.getEntity().teleport(Core.lobbySpawn);
 			}
+		}
+	}
+	
+	@EventHandler
+	public void onEntitySpawn(CreatureSpawnEvent e){
+		if (e.getEntity() instanceof Monster){
+			e.setCancelled(true); // monsters are not allowed to spawn in game (from monster spawner or other cause)
 		}
 	}
 	
@@ -79,6 +90,14 @@ public class DisabledEvents implements Listener{
 	}
 	
 	@EventHandler
+	public void onItemSpawn(ItemSpawnEvent e){
+		if (e.getEntity().getItemStack() != null
+				&& e.getEntity().getItemStack().getType() == Material.SEEDS){
+			e.setCancelled(true); // prevent seeds from being spawned/dropped in the game (from breaking tall grass)
+		}
+	}
+	
+	@EventHandler
 	public void onPortalTravel(PlayerPortalEvent e){
 		e.setCancelled(true);
 	}
@@ -118,8 +137,10 @@ public class DisabledEvents implements Listener{
 	public void onSpectatorInteractWithBlock(PlayerInteractEvent e){
 		if (e.getAction() == Action.RIGHT_CLICK_BLOCK
 				&& Core.gameStarted == true
-				&& e.getPlayer().getGameMode() == GameMode.SPECTATOR){
+				&& e.getPlayer().getGameMode() == GameMode.SPECTATOR
+				&& e.getPlayer().isOp() == false){
 			e.setCancelled(true); // prevent spectator from interacting with blocks like chests, furnaces, droppers, etc
+			// only op'ed spectators can get access to chests
 		}
 	}
 }

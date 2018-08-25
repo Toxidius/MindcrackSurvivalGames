@@ -20,6 +20,8 @@ import MSG.GameMechanics.PlayerChat;
 import MSG.GameMechanics.PlayerDeath;
 import MSG.GameMechanics.PlayerInteractWithBlock;
 import MSG.GameMechanics.PlayerJoin;
+import MSG.GameMechanics.PreventDropItems;
+import MSG.GameMechanics.TempInvulnerability;
 import MSG.Main.GameStates.GameState;
 
 public class Core extends JavaPlugin{
@@ -46,6 +48,11 @@ public class Core extends JavaPlugin{
 	public static ChatColor team2Color;
 	public static ChatColor team3Color;
 	public static ChatColor team4Color;
+	
+	public static String team1Name = "Red";
+	public static String team2Name = "Green";
+	public static String team3Name = "Blue";
+	public static String team4Name = "Yellow";
 	
 	// global objects
 	public static GameManager gameManager;
@@ -75,8 +82,8 @@ public class Core extends JavaPlugin{
 		
 		team1Color = ChatColor.RED;
 		team2Color = ChatColor.GREEN;
-		team2Color = ChatColor.BLUE;
-		team2Color = ChatColor.YELLOW;
+		team3Color = ChatColor.BLUE;
+		team4Color = ChatColor.YELLOW;
 		
 		// non-global objects
 		PlayerJoin playerJoin = new PlayerJoin();
@@ -85,6 +92,8 @@ public class Core extends JavaPlugin{
 		DisabledEvents disabledEvents = new DisabledEvents();
 		BlockBreak blockBreak = new BlockBreak();
 		PlayerInteractWithBlock playerInteractWithBlock = new PlayerInteractWithBlock();
+		PreventDropItems preventDropItems = new PreventDropItems();
+		TempInvulnerability tempInvulnerability = new TempInvulnerability();
 		
 		// initialize objects
 		gameManager = new GameManager();

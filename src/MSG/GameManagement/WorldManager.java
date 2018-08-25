@@ -77,6 +77,7 @@ public class WorldManager {
 		chosenWorldConfig = new File(worldsDir.getPath() + pathSeparator + chosenGameWorld.getName() + ".yml");
 		if (chosenWorldConfig.exists() == false){
 			Bukkit.getServer().broadcastMessage("The world config file doesn't exist!");
+			Bukkit.getServer().broadcastMessage(chosenWorldConfig.getAbsolutePath());
 			return false;
 		}
 		
@@ -121,6 +122,8 @@ public class WorldManager {
 		double x, y, z;
 		World world = Core.lobbyWorld;
 		configManager = new ConfigManager(chosenWorldConfig);
+		
+		Core.gameManager.generateChests = configManager.getBoolean("generate-chests");
 		
 		if (configManager.getBoolean("is-team-game") == true){
 			// this map is a team blood bath map, get the spawn locations

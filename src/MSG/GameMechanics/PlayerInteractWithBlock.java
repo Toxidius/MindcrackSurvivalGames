@@ -45,7 +45,7 @@ public class PlayerInteractWithBlock implements Listener{
 		if (Core.gameStarted == false
 				&& e.getPlayer().getGameMode() == GameMode.SURVIVAL
 				&& (e.getAction() == Action.RIGHT_CLICK_BLOCK || e.getAction() == Action.PHYSICAL) ){
-			e.setCancelled(true);
+			e.setCancelled(true); // prevent interacting with blocks at all before the game has started
 		}
 		else if (Core.gameStarted == true
 				&& e.getPlayer().getGameMode() == GameMode.SURVIVAL

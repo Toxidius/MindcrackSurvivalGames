@@ -19,7 +19,7 @@ public class PlayerChat implements Listener{
 	
 	@EventHandler
 	public void onPlayerChat(AsyncPlayerChatEvent e){
-		e.setCancelled(true); // complete overriding of message behavior
+		e.setCancelled(true); // complete overriding of built-in message behavior
 		
 		if (Core.gameStarted == false){
 			// pregame message
@@ -36,7 +36,7 @@ public class PlayerChat implements Listener{
 			if (e.getPlayer().getGameMode() == GameMode.SPECTATOR){
 				// spectator
 				Bukkit.getServer().broadcastMessage(ChatColor.WHITE + "[" + ChatColor.RED + "Spectator" + ChatColor.WHITE + "] " 
-						+ e.getPlayer().getName() + " " + ChatColor.WHITE + e.getMessage());
+						+ ChatColor.GOLD + e.getPlayer().getName() + " " + ChatColor.WHITE + e.getMessage());
 			}
 			else if (Core.gameManager.isTeamGame == true){
 				// team game
@@ -56,7 +56,7 @@ public class PlayerChat implements Listener{
 			}
 			else{
 				// non-team game
-				Bukkit.getServer().broadcastMessage(e.getPlayer().getName() + " " + ChatColor.WHITE + e.getMessage());
+				Bukkit.getServer().broadcastMessage(ChatColor.GOLD + e.getPlayer().getName() + " " + ChatColor.WHITE + e.getMessage());
 			}
 		}
 	}
@@ -77,10 +77,10 @@ public class PlayerChat implements Listener{
 			return Core.team4Color;
 		}
 		else if (playerTeam == -1){
-			return ChatColor.GRAY;
+			return ChatColor.GOLD;
 		}
 		else{
-			return ChatColor.GRAY;
+			return ChatColor.GOLD;
 		}
 	}
 }

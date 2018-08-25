@@ -84,6 +84,12 @@ public class ScoreboardManager implements Runnable{
 		else if (team == 2){
 			team2.addEntry(playerName);
 		}
+		else if (team == 3){
+			team3.addEntry(playerName);
+		}
+		else if (team == 4){
+			team4.addEntry(playerName);
+		}
 	}
 	
 	public void removePlayerFromTeam(String playerName, int team){
@@ -92,6 +98,12 @@ public class ScoreboardManager implements Runnable{
 		}
 		else if (team == 2){
 			team2.removeEntry(playerName);
+		}
+		else if (team == 3){
+			team3.removeEntry(playerName);
+		}
+		else if (team == 4){
+			team4.removeEntry(playerName);
 		}
 	}
 	
@@ -135,11 +147,26 @@ public class ScoreboardManager implements Runnable{
 		
 		// check if only one player or one team is remaining
 		if (Core.gameManager.isTeamGame == true){
-			// TODO
+			if (Core.gameManager.isOneTeamRemaining() == true
+					&& Bukkit.getOnlinePlayers().size() == 1
+					&& Core.gameManager.isOpOnline() == true){
+				// one team is still alive, but it's an admin testing the game; don't end it automatically
+			}
+			else if (Core.gameManager.isOneTeamRemaining() == true){
+				// one team is still alive, set them to win
+				Core.gameManager.endGameInitiate(Core.gameManager.getLastTeamAlive());
+			}
 		}
 		else{
-			if (Core.gameManager.playersRemaining <= 1){
-				//Core.gameManager.endGameInitiate(Core.gameManager.getLastPlayerAlive()); // TODO remove later on during testing
+			if (Core.gameManager.playersRemaining <= 1
+					&& Bukkit.getOnlinePlayers().size() > 1){
+				// this last player standing wins
+				Core.gameManager.endGameInitiate(Core.gameManager.getLastPlayerAlive());
+			}
+			else if (Core.gameManager.playersRemaining <= 1
+					&& Bukkit.getOnlinePlayers().size() == 1
+					&& Core.gameManager.isOpOnline() == true){
+				// game is in testing/development mode; don't end it automatically
 			}
 		}
 		
@@ -150,11 +177,34 @@ public class ScoreboardManager implements Runnable{
 		String title, line1, line2, line3, line4;
 		title = ChatColor.GOLD + "" + ChatColor.BOLD + "Mindcrack SG";
 		
-		String formattedTime = (int)Math.floor(Core.gameManager.gameTime/60.0) + ":" + (Core.gameManager.gameTime%60);
+		int minutes = (int)Math.floor(Core.gameManager.gameTime/60.0);
+		int seconds = (Core.gameManager.gameTime%60);
+		
+		// check if the game time has ran out (game exceeded 20 minutes)
+		if (minutes == 20 && seconds == 0){
+			Bukkit.getServer().broadcastMessage(ChatColor.RED + "Game will end in 1 minute!");
+		}
+		else if (minutes == 21 && seconds == 0){
+			Core.gameManager.endGameInitiate(null); // force end the game (time ran out)
+		}
+		
+		// special formatting of the text based on if the seconds are less than 9
+		String formattedTime = null;
+		if (seconds < 10){
+			formattedTime = minutes + ":0" + seconds;
+		}
+		else{
+			formattedTime = minutes + ":" + seconds;
+		}
 		
 		line1 = ChatColor.YELLOW + "Time: " + ChatColor.WHITE + formattedTime;
 		line2 = ChatColor.YELLOW + "Players Alive: " + ChatColor.WHITE + Core.gameManager.playersRemaining;
-		line3 = "";
+		if (Core.gameManager.gameTime <= 30){
+			line3 = ChatColor.DARK_PURPLE + "Invulnerability Active";
+		}
+		else{
+			line3 = "";
+		}		
 		line4 = "";
 		
 		updateSidebar(title, line1, line2, line3, line4);

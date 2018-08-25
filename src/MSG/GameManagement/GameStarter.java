@@ -49,16 +49,6 @@ public class GameStarter implements Runnable, Listener{
 	public void start(){
 		reset(); // make sure the values have been reset
 		
-		// give all players the not ready item
-		ItemStack notReadyItem = new ItemStack(Material.REDSTONE, 1);
-		ItemMeta meta = notReadyItem.getItemMeta();
-		meta.setDisplayName(ChatColor.RED + "Currently Not Ready");
-		notReadyItem.setItemMeta(meta);
-		
-		for (Player player : Bukkit.getOnlinePlayers()){
-			player.getInventory().addItem(notReadyItem);
-		}
-		
 		this.id = Bukkit.getScheduler().scheduleSyncRepeatingTask(Core.thisPlugin, this, 20L, 20L); // start this class as a runnable every 1 second
 	}
 	
